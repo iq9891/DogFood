@@ -12,10 +12,13 @@
 #include<stdlib.h>
 #include<string.h>
 
-/*
- * 方法一：使用malloc
- */
-void *MALLOC(size_t size)
+/* 按字节对齐 */
+static size_t round_up(size_t size)
+{
+    return (((size)+7) &~ 7);// 按8字节对齐
+}
+
+static void *MALLOC(size_t size)
 {
     void *mem;
     mem = (void *)malloc(size);//类型指派可选
@@ -31,10 +34,7 @@ void *MALLOC(size_t size)
     return mem;
 }
 
-/*
- * 方法二：使用calloc
- */
-void *CALLOC(size_t n,size_t size)
+static void *CALLOC(size_t n,size_t size)
 {
     void *mem;
     mem = (void *)calloc(n,size);//类型指派可选
@@ -47,7 +47,7 @@ void *CALLOC(size_t n,size_t size)
     return mem;
 }
 
-void *REALLOC(void *mem,size_t new_size)
+static void *REALLOC(void *mem,size_t new_size)
 {
 	void *tmp_mem = realloc(mem, new_size);
 	if (tmp_mem == NULL)
@@ -60,7 +60,7 @@ void *REALLOC(void *mem,size_t new_size)
 	return mem;
 }
 
-void FREE(void *mem)
+static void FREE(void *mem)
 {
     if (mem != NULL)
     {
@@ -78,6 +78,8 @@ int main(void)
     str = (char *)CALLOC(8,sizeof(char));
     
     str = (char *)REALLOC(str,20*sizeof(char));
+
+    printf("%ld round up is %ld\n",8,round_up(8));
 
     FREE(array);
     FREE(str);
