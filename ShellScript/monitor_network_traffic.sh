@@ -3,8 +3,8 @@
 #监控网卡流量
 
 
-if (($# != 1));then
-    echo -e "Usage: ./traffic.sh networkCardName"
+if (($# != 2));then
+    echo -e "Usage: ./monitor_network_traffic.sh networkCardName secs"
     exit
 fi
 
@@ -16,7 +16,7 @@ while true;do
         NOW=`date +"%F %T"`
         TX1=`ifconfig $ETH|grep bytes|awk -F '[ :]+' '{print $9}'`
         RX1=`ifconfig $ETH|grep bytes|awk -F '[ :]+' '{print $4}'`
-        sleep 1
+        sleep $2
         TX2=`ifconfig $ETH|grep bytes|awk -F '[ :]+' '{print $9}'`
         RX2=`ifconfig $ETH|grep bytes|awk -F '[ :]+' '{print $4}'`
    
@@ -27,7 +27,7 @@ while true;do
         let TX_AVERAGE=TX_TOTAL/${I}
         let RX_AVERAGE=RX_TOTAL/${I}
    
-        clear
+        #clear
    
         printf "%10s\t%20s\n" "Device $ETH [$IP]" "$NOW"
         echo "============================================================="
