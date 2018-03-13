@@ -1,2 +1,0 @@
-# Introducion
-About Lua Language

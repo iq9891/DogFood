@@ -11,7 +11,11 @@ _M._VERSION = '1.0'
 
 local mt = {__index = _M }
 
-local print = print -- 1.avoid naming conflict 2.local is faster then global
+--[[
+    1.avoid naming conflict 
+    2.local is faster then global
+--]]
+local print = print 
 
 function _M.deposit(self, v)
     self.balance = self.balance + v
@@ -25,9 +29,13 @@ function _M.withdraw(self, v)
     end
 end
 
-function _M.new(self,balance)
+function _M.new(balance, info)
+    if (balance and type(balance) ~= 'number') or (info and type(info) ~= 'table') then return false end
+
     balance = balance or 0
-    return setmetatable({balance = balance},mt) -- protect private attribute
+    info.bank = 'ohmygood'
+
+    return setmetatable({balance = balance, info = info}, mt) -- protect private attribute
 end
 
 return _M
