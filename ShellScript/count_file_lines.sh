@@ -1,7 +1,7 @@
 #!/bin/bash
 #统计文本有几行数
 if (($# != 1));then
-    echo -e "Usage: ./count_file_lines.sh filename"
+    echo -e "Usage: sh $0 filename"
     exit
 fi
 

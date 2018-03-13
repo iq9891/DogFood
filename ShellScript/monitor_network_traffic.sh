@@ -4,7 +4,7 @@
 
 
 if (($# != 2));then
-    echo -e "Usage: ./monitor_network_traffic.sh networkCardName secs"
+    echo -e "Usage: sh $0 networkCardName secs"
     exit
 fi
 

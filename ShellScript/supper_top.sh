@@ -4,7 +4,7 @@
 # get pids from multiple argv
 
 if [ $# -le 1 ];then
-    echo -e "Usage: sh better_top.sh secs Name(s)"
+    echo -e "Usage: sh $0 secs program(s)"
     exit
 fi
 

@@ -2,7 +2,7 @@
 # watch program rss (only one program)
 
 if [ $# -ne 1 ];then
-    echo -e "Usage: sh monitor_memory.sh Name"
+    echo -e "Usage: sh $0 Name"
     exit
 fi
 
@@ -11,7 +11,7 @@ pids=`pidof $1`
 #echo -e ${pids}
 
 if [ $? -ne 0 ];then
-    echo -e "Usage: sh monitor_memory.sh Name"
+    echo -e "Usage: sh $0 Name"
     exit
 fi
 

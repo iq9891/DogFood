@@ -4,7 +4,7 @@
 if [ $# -ge 1 ];then
     for ((i=1;i<=$#;i=i+1))
     do
-        # !:间接引用
+        # ! 变量的间接引用
         if [ -s ${!i} ]; then 
             : > ${!i}
             echo -e "Success : ${!i} is empty now."
@@ -13,5 +13,5 @@ if [ $# -ge 1 ];then
     fi
     done
 else
-    echo -e "Usage: $0 [filename] [filename] ..."
+    echo -e "Usage: sh $0 filename filename ..."
 fi
