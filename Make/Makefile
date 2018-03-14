@@ -1,5 +1,5 @@
 # 当前目录找不到依赖/目标文件时,去指定路径查找
-VPATH ?= ~/Desktop/DogFood/make/:.
+VPATH ?= ./:../
 #vpath %.c %.h %.o ~/Desktop/DogFood/make/:.
 
 SRC := ./main.c ./print.c
