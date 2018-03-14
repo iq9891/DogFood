@@ -1,2 +1,0 @@
-# Introduction
-About C Language
