@@ -24,5 +24,8 @@
 #define tostring_1(x) #x
 #define tostring(x) tostring_1(x)
 
+/* APIS for test/test_xxxxxxxxx.c */
+int check_argument(int argc, const char *argv[]);
+
 #endif
 
