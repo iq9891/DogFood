@@ -16,13 +16,9 @@
 #ifndef _HEADER_H
 #define _HEADER_H
 
-
 #include <stdio.h> // 编译器将从标准库目录开始搜索
 #include "boolean.h" // 编译器将从当前目录下搜索，再到标准库目录搜索
 
-/* reference: http://blog.csdn.net/lhf_tiger/article/details/9086049 */
-#define tostring_1(x) #x
-#define tostring(x) tostring_1(x)
 
 /* APIS for test/test_xxxxxxxxx.c */
 int check_argument(int argc, const char *argv[]);

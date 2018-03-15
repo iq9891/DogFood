@@ -8,17 +8,13 @@
 #include "../header.h"
 #include "../boolean.h"
 
-#define N 999
-
 int main(void)
 {
-	
-	printf("N tostring is %s\n", tostring(N));
 	
 	boolean t = true;
 	boolean f = false;
 
-	printf("true is %d, false is %d, enum boolean is %ld\n", t, f, sizeof(boolean));
+	printf("true is %d, false is %d, enum boolean size is %ld\n", t, f, sizeof(boolean));
 
 	return 0;
 }
