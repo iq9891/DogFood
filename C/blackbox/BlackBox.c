@@ -53,7 +53,7 @@ void blackbox_handler(int sig)
     
     //将地址信息翻译为符号描述的信息
     strings = backtrace_symbols(buffer, nptrs);
-    if (strings == NULL)
+    if (!strings)
     {
         perror("backtrace_symbol");
         exit(EXIT_FAILURE);

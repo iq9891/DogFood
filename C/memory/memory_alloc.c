@@ -22,7 +22,7 @@ static void *MALLOC(size_t size)
 {
     void *mem;
     mem = (void *)malloc(size);//类型指派可选
-    if(mem == NULL)
+    if(!mem)
     {
         fprintf(stderr,"MALLOC failed!\n");
         exit(EXIT_FAILURE);
@@ -38,7 +38,7 @@ static void *CALLOC(size_t n,size_t size)
 {
     void *mem;
     mem = (void *)calloc(n,size);//类型指派可选
-    if(mem == NULL)
+    if(!mem)
     {
         fprintf(stderr,"CALLOC failed!\n");
         exit(EXIT_FAILURE);
@@ -50,7 +50,7 @@ static void *CALLOC(size_t n,size_t size)
 static void *REALLOC(void *mem,size_t new_size)
 {
 	void *tmp_mem = realloc(mem, new_size);
-	if (tmp_mem == NULL)
+	if (!tmp_mem)
 	{
 		fprintf(stderr,"REALLOC failed!\n");
 		exit(EXIT_FAILURE);
@@ -62,7 +62,7 @@ static void *REALLOC(void *mem,size_t new_size)
 
 static void FREE(void *mem)
 {
-    if (mem != NULL)
+    if (mem)
     {
         free(mem);
         mem = NULL;

@@ -27,7 +27,7 @@
             \
             /* address transform to information to print */\
             strings = (char **)backtrace_symbols(array,depth);\
-            if (NULL == strings)\
+            if (!strings)\
             {\
                 perror("backtrace_symbols");\
                 exit(EXIT_FAILURE);\

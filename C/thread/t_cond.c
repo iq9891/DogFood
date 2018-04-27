@@ -42,7 +42,7 @@ int main(void)
     printf("test start\n");
     
     test_t *test = (test_t *)calloc(1, sizeof(test_t));
-    if (test == NULL)
+    if (!test)
     {
         fprintf(stderr,"calloc error\n");
         exit(EXIT_FAILURE);

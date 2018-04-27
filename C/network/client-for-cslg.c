@@ -153,7 +153,7 @@ int main(int argc ,const char *argv[])
     printf("Send succeed\n");
     
     FILE *fp = fopen("response.txt","wb");
-    if(fp == NULL)
+    if(!fp)
     {
         fprintf(stderr,"File Open Error\n");
         exit(EXIT_FAILURE);

@@ -71,7 +71,7 @@ static int create_and_bind(char *port)
         close(sfd);
     }
 
-    if(rp == NULL)
+    if(!rp)
     {
       fprintf(stderr, "Could not bind\n");
       return -1;

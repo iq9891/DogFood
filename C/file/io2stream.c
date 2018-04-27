@@ -52,7 +52,7 @@ static unsigned int put_uint(unsigned int i,FILE *fp)
 int main(int argc,char *argv[])
 {
     fp = fopen(FILENAME, "wb");
-    if (fp == NULL)
+    if (!fp)
     {
         fprintf(stderr,"Error:open file: %s failed!\n",FILENAME);
         exit(EXIT_FAILURE);
@@ -78,7 +78,7 @@ int main(int argc,char *argv[])
     fclose(fp);
 
     fp = fopen(FILENAME, "rb");
-    if (fp == NULL)
+    if (!fp)
     {
         fprintf(stderr,"Error:open file: %s failed!\n",FILENAME);
         exit(EXIT_FAILURE);

@@ -19,11 +19,11 @@ int main(void)
 
     void *dl = dlopen(LIB,RTLD_LAZY); //打开动态库
 
-    if (dl == NULL)
+    if (!dl)
         fprintf(stderr,"Error:failed to load libary.\n");
 
     char *error = dlerror(); //检测错误
-    if (error != NULL)
+    if (error)
     {
         fprintf(stderr,"%s\n",error);
         return -1;
@@ -31,7 +31,7 @@ int main(void)
 
     void (*func)() = dlsym(dl,"welcome"); // 获取函数地址
     error = dlerror(); //检测错误
-    if (error != NULL)
+    if (error)
     {
         fprintf(stderr,"%s\n",error);
         return -1;
@@ -41,7 +41,7 @@ int main(void)
 
     dlclose(dl); //关闭动态库
     error = dlerror(); //检测错误
-    if (error != NULL)
+    if (error)
     {
         fprintf(stderr,"%s\n",error);
         return -1;
