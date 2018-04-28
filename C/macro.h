@@ -12,8 +12,10 @@
 #define tostring_1(x) #x
 #define tostring(x) tostring_1(x)
 
-#if defined __UNKNOW__
-#error this is unkow //停止编译并抛出错误
+/* -DBUG */
+#if defined BUG
+#warning this is bug //抛出警告信息，编译继续
+#error this is bug //抛出错误信息，编译停止
 #endif
 
 #endif
