@@ -12,7 +12,7 @@
 	#include <ucontext.h>
 #endif 
 
-#define STACK_SIZE (1024*1024)
+#define STACK_SIZE (1024*1024) // 1M
 #define DEFAULT_COROUTINE 16
 
 struct coroutine;
@@ -50,7 +50,9 @@ struct coroutine {
 */
 struct coroutine * 
 _co_new(struct schedule *S , coroutine_func func, void *ud) {
-	struct coroutine * co = malloc(sizeof(*co));
+	struct coroutine * co = malloc(sizeof(struct coroutine));
+	if (!co) return NULL;
+
 	co->func = func;
 	co->ud = ud;
 	co->sch = S;
@@ -66,8 +68,15 @@ _co_new(struct schedule *S , coroutine_func func, void *ud) {
 */
 void
 _co_delete(struct coroutine *co) {
-	free(co->stack);
+	if (!co) return;
+	
+	if (co->stack) {
+		free(co->stack);
+		co->stack = NULL;
+	}
+
 	free(co);
+	co = NULL;
 }
 
 /**
@@ -77,11 +86,21 @@ struct schedule *
 coroutine_open(void) {
 	// 这里做的主要就是分配内存，同时赋初值
 	struct schedule *S = malloc(sizeof(*S));
+	if (!S) return NULL;
+
 	S->nco = 0;
 	S->cap = DEFAULT_COROUTINE;
 	S->running = -1;
-	S->co = malloc(sizeof(struct coroutine *) * S->cap);
-	memset(S->co, 0, sizeof(struct coroutine *) * S->cap);
+
+	size_t co_size = sizeof(struct coroutine *) * S->cap;
+	S->co = malloc(co_size);
+	if (!S->co) {
+		free(S);
+		S = NULL;
+		return NULL;
+	}
+	memset(S->co, 0, co_size);
+
 	return S;
 }
 
@@ -91,10 +110,13 @@ coroutine_open(void) {
 */
 void 
 coroutine_close(struct schedule *S) {
+	if (!S) return;
+
 	int i;
 	// 关闭掉每一个协程
-	for (i=0;i<S->cap;i++) {
-		struct coroutine * co = S->co[i];
+	for (i = 0; i < S->cap; i++) {
+		struct coroutine * co = NULL;
+		if (S->co) co = S->co[i];
 
 		if (co) {
 			_co_delete(co);
@@ -102,9 +124,13 @@ coroutine_close(struct schedule *S) {
 	}
 
 	// 释放掉
-	free(S->co);
-	S->co = NULL;
+	if (S->co) {
+		free(S->co);
+		S->co = NULL;
+	}
+
 	free(S);
+	S = NULL;
 }
 
 /**
@@ -117,6 +143,8 @@ coroutine_close(struct schedule *S) {
 int 
 coroutine_new(struct schedule *S, coroutine_func func, void *ud) {
 	struct coroutine *co = _co_new(S, func , ud);
+	if (!co) return -1;
+
 	if (S->nco >= S->cap) {
 		// 如果目前协程的数量已经大于调度器的容量，那么进行扩容
 		int id = S->cap;	// 新的协程的id直接为当前容量的大小
@@ -147,7 +175,6 @@ coroutine_new(struct schedule *S, coroutine_func func, void *ud) {
 			}
 		}
 	}
-	assert(0);
 	return -1;
 }
 
@@ -177,43 +204,45 @@ mainfunc(uint32_t low32, uint32_t hi32) {
 */
 void 
 coroutine_resume(struct schedule * S, int id) {
-	assert(S->running == -1);
-	assert(id >=0 && id < S->cap);
+	if (!S) return;
+	if (S->running != -1) return;
+	if (id < 0 || id >= S->cap) return;
 
     // 取出协程
-	struct coroutine *C = S->co[id];
+	struct coroutine *C = (S->co ? S->co[id] : NULL);
 	if (C == NULL)
 		return;
 
 	int status = C->status;
 	switch(status) {
-	case COROUTINE_READY:
-	    //初始化ucontext_t结构体,将当前的上下文放到C->ctx里面
-		getcontext(&C->ctx);
-		// 将当前协程的运行时栈的栈顶设置为S->stack，每个协程都这么设置，这就是所谓的共享栈。（注意，这里是栈顶）
-		C->ctx.uc_stack.ss_sp = S->stack; 
-		C->ctx.uc_stack.ss_size = STACK_SIZE;
-		C->ctx.uc_link = &S->main; // 如果协程执行完，将切换到主协程中执行
-		S->running = id;
-		C->status = COROUTINE_RUNNING;
+		case COROUTINE_READY:
+		    //初始化ucontext_t结构体,将当前的上下文放到C->ctx里面
+			getcontext(&C->ctx);
+			// 将当前协程的运行时栈的栈顶设置为S->stack，每个协程都这么设置，这就是所谓的共享栈。（注意，这里是栈顶）
+			C->ctx.uc_stack.ss_sp = S->stack; 
+			C->ctx.uc_stack.ss_size = STACK_SIZE;
+			C->ctx.uc_link = &S->main; // 如果协程执行完，将切换到主协程中执行;如果不设置, 则默认为NULL，那么协程执行完，整个程序就结束了
+			S->running = id;
+			C->status = COROUTINE_RUNNING;
 
-		// 设置执行C->ctx函数, 并将S作为参数传进去
-		uintptr_t ptr = (uintptr_t)S;
-		makecontext(&C->ctx, (void (*)(void)) mainfunc, 2, (uint32_t)ptr, (uint32_t)(ptr>>32));
+			// 设置执行C->ctx函数, 并将S作为参数传进去
+			uintptr_t ptr = (uintptr_t)S;
+			makecontext(&C->ctx, (void (*)(void)) mainfunc, 2, (uint32_t)ptr, (uint32_t)(ptr>>32));
 
-		// 将当前的上下文放入S->main中，并将C->ctx的上下文替换到当前上下文
-		swapcontext(&S->main, &C->ctx);
-		break;
-	case COROUTINE_SUSPEND:
-	    // 将协程所保存的栈的内容，拷贝到当前运行时栈中
-		// 其中C->size在yield时有保存
-		memcpy(S->stack + STACK_SIZE - C->size, C->stack, C->size);
-		S->running = id;
-		C->status = COROUTINE_RUNNING;
-		swapcontext(&S->main, &C->ctx);
-		break;
-	default:
-		assert(0);
+			// 将当前的上下文放入S->main中，并将C->ctx的上下文替换到当前上下文, 这样的话，将会执行新的上下文对应的程序了。在coroutine中, 也就是开始执行mainfunc这个函数
+			swapcontext(&S->main, &C->ctx);
+
+			break;
+		case COROUTINE_SUSPEND:
+		    // 将协程所保存的栈的内容，拷贝到当前运行时栈中
+			// 其中C->size在yield时有保存
+			memcpy(S->stack + STACK_SIZE - C->size, C->stack, C->size);
+			S->running = id;
+			C->status = COROUTINE_RUNNING;
+			swapcontext(&S->main, &C->ctx);
+			break;
+		default:
+			assert(0);
 	}
 }
 
@@ -229,8 +258,19 @@ _save_stack(struct coroutine *C, char *top) {
 	// S->stack + STACK_SIZE就是运行时栈的栈底
 	// dummy，此时在栈中，肯定是位于最底的位置的，即栈顶
 	// top - &dummy 即整个栈的容量
+
+	/*
+	 * 高地址 S->stack + STACK_SIZE == top
+	 * others
+	 * dummy
+	 * ...
+	 * 低地址 S->stack
+	 */
 	char dummy = 0;
 	assert(top - &dummy <= STACK_SIZE);
+
+	// 如果已分配内存小于当前栈的大小，则释放内存重新分配
+	printf("aaaa: %d\n",C->cap);
 	if (C->cap < top - &dummy) {
 		free(C->stack);
 		C->cap = top-&dummy;
@@ -246,6 +286,8 @@ _save_stack(struct coroutine *C, char *top) {
 */
 void
 coroutine_yield(struct schedule * S) {
+	if (!S) return;
+
 	// 取出当前正在运行的协程
 	int id = S->running;
 	assert(id >= 0);
@@ -266,10 +308,12 @@ coroutine_yield(struct schedule * S) {
 
 int 
 coroutine_status(struct schedule * S, int id) {
-	assert(id>=0 && id < S->cap);
-	if (S->co[id] == NULL) {
+	if (id < 0 || id >= S->cap) return -1;
+
+	if (!S->co[id]) {
 		return COROUTINE_DEAD;
 	}
+
 	return S->co[id]->status;
 }
 
@@ -283,4 +327,3 @@ int
 coroutine_running(struct schedule * S) {
 	return S->running;
 }
-
