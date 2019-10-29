@@ -35,7 +35,7 @@ struct schedule {
 */
 struct coroutine {
 	coroutine_func func; // 协程所用的函数
-	void *ud;  // 协程参数
+	void *ud;  // 协程所用的函数参数
 	ucontext_t ctx; // 协程上下文
 	struct schedule * sch; // 该协程所属的调度器
 	ptrdiff_t cap; 	 // 已经分配的内存大小
@@ -91,7 +91,8 @@ coroutine_open(void) {
 	S->nco = 0;
 	S->cap = DEFAULT_COROUTINE;
 	S->running = -1;
-
+	memset(S->stack, 0x0, STACK_SIZE);
+	
 	size_t co_size = sizeof(struct coroutine *) * S->cap;
 	S->co = malloc(co_size);
 	if (!S->co) {
@@ -189,7 +190,9 @@ mainfunc(uint32_t low32, uint32_t hi32) {
 
 	int id = S->running;
 	struct coroutine *C = S->co[id];
+
 	C->func(S,C->ud);	// 中间有可能会有不断的yield
+
 	_co_delete(C);
 	S->co[id] = NULL;
 	--S->nco;
@@ -210,8 +213,7 @@ coroutine_resume(struct schedule * S, int id) {
 
     // 取出协程
 	struct coroutine *C = (S->co ? S->co[id] : NULL);
-	if (C == NULL)
-		return;
+	if (!C) return;
 
 	int status = C->status;
 	switch(status) {
@@ -268,16 +270,15 @@ _save_stack(struct coroutine *C, char *top) {
 	 */
 	char dummy = 0;
 	assert(top - &dummy <= STACK_SIZE);
-
 	// 如果已分配内存小于当前栈的大小，则释放内存重新分配
-	printf("aaaa: %d\n",C->cap);
 	if (C->cap < top - &dummy) {
-		free(C->stack);
+		if(C->stack) free(C->stack);
 		C->cap = top-&dummy;
 		C->stack = malloc(C->cap);
 	}
 	C->size = top - &dummy;
-	memcpy(C->stack, &dummy, C->size);
+
+	if(C->stack) memcpy(C->stack, &dummy, C->size);
 }
 
 /**
@@ -296,7 +297,7 @@ coroutine_yield(struct schedule * S) {
 	assert((char *)&C > S->stack);
 
 	// 将当前运行的协程的栈内容保存起来
-	_save_stack(C,S->stack + STACK_SIZE);
+	_save_stack(C, S->stack + STACK_SIZE);
 	
 	// 将当前栈的状态改为 挂起
 	C->status = COROUTINE_SUSPEND;
@@ -316,7 +317,7 @@ coroutine_status(struct schedule * S, int id) {
 
 	return S->co[id]->status;
 }
-
+ 
 /**
 * 获取正在运行的协程的ID
 * 
@@ -326,4 +327,17 @@ coroutine_status(struct schedule * S, int id) {
 int 
 coroutine_running(struct schedule * S) {
 	return S->running;
+}
+
+/**
+* 获取协程运行时栈大小
+* 
+* @param S 协程调度器
+* @param id 协程ID
+* @return 该协程运行时栈大小
+*/
+long
+coroutine_size(struct schedule * S, int id) {
+	if (!S || !S->co || !S->co[id]) return 0;
+	return S->co[id]->size;
 }

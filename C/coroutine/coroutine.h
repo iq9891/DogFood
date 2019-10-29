@@ -33,4 +33,7 @@ int coroutine_running(struct schedule *);
 // 切出协程
 void coroutine_yield(struct schedule *);
 
+// 返回协程运行时栈大小
+long coroutine_size(struct schedule * S, int id);
+
 #endif
